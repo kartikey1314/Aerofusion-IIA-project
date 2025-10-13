@@ -1,0 +1,17 @@
+{
+  "airlines": ["air india", "indigo"],
+  "intents": {
+    "cheapest": "MIN",
+    "lowest": "MIN",
+    "average": "AVG",
+    "maximum": "MAX",
+    "highest": "MAX",
+    "list": "LIST"
+  },
+  "fields": {
+    "origin": ["from", "source", "origin"],
+    "destination": ["to", "dest", "destination"],
+    "date": ["today", "tomorrow", "on", "this week", "next week"],
+    "price": ["under", "less than", "below"]
+  }
+}
