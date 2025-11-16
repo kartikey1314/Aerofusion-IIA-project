@@ -1,0 +1,310 @@
+{
+  "query": "flights from delhi to kolkata by airindia on 20-11-2025",
+  "parsed": {
+    "airline": "Air India",
+    "origin": "Delhi",
+    "destination": "Kolkata",
+    "date": "2025-11-20",
+    "price_limit": null,
+    "seat_count": null,
+    "intent": "LIST"
+  },
+  "dwh_sql": {
+    "sql": "SELECT flight_no, airline, origin, destination, flight_date AS date, price, array_length(seats,1) AS seat_count, 'DWH' as source FROM flights_dwh WHERE 1=1 AND origin = %s AND destination = %s AND flight_date = %s;",
+    "params": [
+      "Delhi",
+      "Kolkata",
+      "2025-11-20"
+    ]
+  },
+  "indigo_sql": {
+    "sql": "SELECT flight_no, airline, from_city AS origin, to_city AS destination, journey_date AS date, departure_time, fare as price, NULL as seat_count, 'IndiGo' as source FROM indigo_src WHERE 1=1 AND from_city = %s AND to_city = %s AND journey_date = %s;",
+    "params": [
+      "Delhi",
+      "Kolkata",
+      "2025-11-20"
+    ]
+  },
+  "mongo_filter": {
+    "route.origin": "Delhi",
+    "route.destination": "Kolkata",
+    "schedule.date": "2025-11-20",
+    "airline_name": "Air India"
+  },
+  "dwh_results": [
+    {
+      "flight_no": "AI202511162262",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": "6451.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162263",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": "5915.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162264",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": "6226.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162265",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": "5762.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162266",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": "5492.00",
+      "seat_count": null,
+      "source": "DWH"
+    }
+  ],
+  "indigo_results": [],
+  "mongo_results": [
+    {
+      "flight_no": "AI20251120809",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 6128.45,
+      "seat_count": 48,
+      "departure_time": "01:00",
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI20251120810",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 5915.0,
+      "seat_count": 79,
+      "departure_time": "06:00",
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI20251120811",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 6226.0,
+      "seat_count": 98,
+      "departure_time": "11:00",
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI20251120812",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 5762.0,
+      "seat_count": 89,
+      "departure_time": "16:00",
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI20251120813",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 5217.4,
+      "seat_count": 155,
+      "departure_time": "21:00",
+      "source": "AirIndia"
+    }
+  ],
+  "integrated_results": [
+    {
+      "flight_no": "AI20251120813",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 5217.4,
+      "seat_count": 155,
+      "departure_time": "21:00",
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI202511162266",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 5492.0,
+      "seat_count": null,
+      "source": "DWH",
+      "departure_time": null
+    },
+    {
+      "flight_no": "AI202511162265",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 5762.0,
+      "seat_count": null,
+      "source": "DWH",
+      "departure_time": null
+    },
+    {
+      "flight_no": "AI20251120812",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 5762.0,
+      "seat_count": 89,
+      "departure_time": "16:00",
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI202511162263",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 5915.0,
+      "seat_count": null,
+      "source": "DWH",
+      "departure_time": null
+    },
+    {
+      "flight_no": "AI20251120810",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 5915.0,
+      "seat_count": 79,
+      "departure_time": "06:00",
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI20251120809",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 6128.45,
+      "seat_count": 48,
+      "departure_time": "01:00",
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI202511162264",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 6226.0,
+      "seat_count": null,
+      "source": "DWH",
+      "departure_time": null
+    },
+    {
+      "flight_no": "AI20251120811",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 6226.0,
+      "seat_count": 98,
+      "departure_time": "11:00",
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI202511162262",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-20",
+      "price": 6451.0,
+      "seat_count": null,
+      "source": "DWH",
+      "departure_time": null
+    }
+  ],
+  "rewritten_prompt": "You are an assistant that summarizes flight search results for a user.\nUser intent (parsed):\n- airline: Air India\n- origin: Delhi\n- destination: Kolkata\n- date: 2025-11-20\n- price_limit: None\n- seat_count: None\n- intent: LIST\n\nReturn:\n1) a short summarized list of top 5 cheapest flights (flight_no, airline, origin, destination, date, departure_time, price).\n2) any integration notes or conflicting records found.\n\nData rows (first 30 shown):\n- AI20251120813 | Air India | Delhi -> Kolkata | 2025-11-20 21:00 | price=5217.4\n- AI202511162266 | Air India | Delhi -> Kolkata | 2025-11-20 None | price=5492.0\n- AI202511162265 | Air India | Delhi -> Kolkata | 2025-11-20 None | price=5762.0\n- AI20251120812 | Air India | Delhi -> Kolkata | 2025-11-20 16:00 | price=5762.0\n- AI202511162263 | Air India | Delhi -> Kolkata | 2025-11-20 None | price=5915.0\n- AI20251120810 | Air India | Delhi -> Kolkata | 2025-11-20 06:00 | price=5915.0\n- AI20251120809 | Air India | Delhi -> Kolkata | 2025-11-20 01:00 | price=6128.45\n- AI202511162264 | Air India | Delhi -> Kolkata | 2025-11-20 None | price=6226.0\n- AI20251120811 | Air India | Delhi -> Kolkata | 2025-11-20 11:00 | price=6226.0\n- AI202511162262 | Air India | Delhi -> Kolkata | 2025-11-20 None | price=6451.0\n\nImportant: return valid JSON only (no extra commentary). Provide keys: top_flights (list), notes (string).",
+  "legacy_rewrite": "You are a flight summarization assistant.\nUser intent (parsed):\n{'airline': 'Air India', 'origin': 'Delhi', 'destination': 'Kolkata', 'date': '2025-11-20', 'price_limit': None, 'seat_count': None, 'intent': 'LIST'}\n\nHere are unified flight results from multiple sources (top 10 shown):\n- AI20251120813 | Air India | Delhi\u2192Kolkata | 2025-11-20 | price=5217.4 | seats=155 | source=AirIndia\n- AI202511162266 | Air India | Delhi\u2192Kolkata | 2025-11-20 | price=5492.0 | seats=None | source=DWH\n- AI202511162265 | Air India | Delhi\u2192Kolkata | 2025-11-20 | price=5762.0 | seats=None | source=DWH\n- AI20251120812 | Air India | Delhi\u2192Kolkata | 2025-11-20 | price=5762.0 | seats=89 | source=AirIndia\n- AI202511162263 | Air India | Delhi\u2192Kolkata | 2025-11-20 | price=5915.0 | seats=None | source=DWH\n- AI20251120810 | Air India | Delhi\u2192Kolkata | 2025-11-20 | price=5915.0 | seats=79 | source=AirIndia\n- AI20251120809 | Air India | Delhi\u2192Kolkata | 2025-11-20 | price=6128.45 | seats=48 | source=AirIndia\n- AI202511162264 | Air India | Delhi\u2192Kolkata | 2025-11-20 | price=6226.0 | seats=None | source=DWH\n- AI20251120811 | Air India | Delhi\u2192Kolkata | 2025-11-20 | price=6226.0 | seats=98 | source=AirIndia\n- AI202511162262 | Air India | Delhi\u2192Kolkata | 2025-11-20 | price=6451.0 | seats=None | source=DWH\n\nTask: Summarize cheapest and available flight options, call out 2-3 best choices with price and source, and give 2 short actionable suggestions for booking (1-2 sentences).\n\nReturn the answer in 3 short paragraphs: 1) summary sentence listing best options; 2) insights (why/notes); 3) booking suggestions.",
+  "llm_summary": "```json\n{\n  \"top_flights\": [\n    {\n      \"flight_no\": \"AI20251120813\",\n      \"airline\": \"Air India\",\n      \"origin\": \"Delhi\",\n      \"destination\": \"Kolkata\",\n      \"date\": \"2025-11-20\",\n      \"departure_time\": \"21:00\",\n      \"price\": 5217.4\n    },\n    {\n      \"flight_no\": \"AI202511162266\",\n      \"airline\": \"Air India\",\n      \"origin\": \"Delhi\",\n      \"destination\": \"Kolkata\",\n      \"date\": \"2025-11-20\",\n      \"departure_time\": null,\n      \"price\": 5492.0\n    },\n    {\n      \"flight_no\": \"AI20251120812\",\n      \"airline\": \"Air India\",\n      \"origin\": \"Delhi\",\n      \"destination\": \"Kolkata\",\n      \"date\": \"2025-11-20\",\n      \"departure_time\": \"16:00\",\n      \"price\": 5762.0\n    },\n    {\n      \"flight_no\": \"AI202511162265\",\n      \"airline\": \"Air India\",\n      \"origin\": \"Delhi\",\n      \"destination\": \"Kolkata\",\n      \"date\": \"2025-11-20\",\n      \"departure_time\": null,\n      \"price\": 5762.0\n    },\n    {\n      \"flight_no\": \"AI20251120810\",\n      \"airline\": \"Air India\",\n      \"origin\": \"Delhi\",\n      \"destination\": \"Kolkata\",\n      \"date\": \"2025-11-20\",\n      \"departure_time\": \"06:00\",\n      \"price\": 5915.0\n    }\n  ],\n  \"notes\": \"Integration notes: None. Conflicting records: None.\"\n}\n```\n\nNote: The top 5 cheapest flights are returned. The flight with departure time 'None' is included in the results.",
+  "llm_parsed": {
+    "top_flights": [
+      {
+        "flight_no": "AI20251120813",
+        "airline": "Air India",
+        "origin": "Delhi",
+        "destination": "Kolkata",
+        "date": "2025-11-20",
+        "departure_time": "21:00",
+        "price": 5217.4
+      },
+      {
+        "flight_no": "AI202511162266",
+        "airline": "Air India",
+        "origin": "Delhi",
+        "destination": "Kolkata",
+        "date": "2025-11-20",
+        "departure_time": null,
+        "price": 5492.0
+      },
+      {
+        "flight_no": "AI20251120812",
+        "airline": "Air India",
+        "origin": "Delhi",
+        "destination": "Kolkata",
+        "date": "2025-11-20",
+        "departure_time": "16:00",
+        "price": 5762.0
+      },
+      {
+        "flight_no": "AI202511162265",
+        "airline": "Air India",
+        "origin": "Delhi",
+        "destination": "Kolkata",
+        "date": "2025-11-20",
+        "departure_time": null,
+        "price": 5762.0
+      },
+      {
+        "flight_no": "AI20251120810",
+        "airline": "Air India",
+        "origin": "Delhi",
+        "destination": "Kolkata",
+        "date": "2025-11-20",
+        "departure_time": "06:00",
+        "price": 5915.0
+      }
+    ],
+    "notes": "Integration notes: None. Conflicting records: None."
+  },
+  "llm_raw": "ChatCompletion(id='chatcmpl-68460204-1e6e-4c64-9a25-c35b0c6155b6', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(content='```json\\n{\\n  \"top_flights\": [\\n    {\\n      \"flight_no\": \"AI20251120813\",\\n      \"airline\": \"Air India\",\\n      \"origin\": \"Delhi\",\\n      \"destination\": \"Kolkata\",\\n      \"date\": \"2025-11-20\",\\n      \"departure_time\": \"21:00\",\\n      \"price\": 5217.4\\n    },\\n    {\\n      \"flight_no\": \"AI202511162266\",\\n      \"airline\": \"Air India\",\\n      \"origin\": \"Delhi\",\\n      \"destination\": \"Kolkata\",\\n      \"date\": \"2025-11-20\",\\n      \"departure_time\": null,\\n      \"price\": 5492.0\\n    },\\n    {\\n      \"flight_no\": \"AI20251120812\",\\n      \"airline\": \"Air India\",\\n      \"origin\": \"Delhi\",\\n      \"destination\": \"Kolkata\",\\n      \"date\": \"2025-11-20\",\\n      \"departure_time\": \"16:00\",\\n      \"price\": 5762.0\\n    },\\n    {\\n      \"flight_no\": \"AI202511162265\",\\n      \"airline\": \"Air India\",\\n      \"origin\": \"Delhi\",\\n      \"destination\": \"Kolkata\",\\n      \"date\": \"2025-11-20\",\\n      \"departure_time\": null,\\n      \"price\": 5762.0\\n    },\\n    {\\n      \"flight_no\": \"AI20251120810\",\\n      \"airline\": \"Air India\",\\n      \"origin\": \"Delhi\",\\n      \"destination\": \"Kolkata\",\\n      \"date\": \"2025-11-20\",\\n      \"departure_time\": \"06:00\",\\n      \"price\": 5915.0\\n    }\\n  ],\\n  \"notes\": \"Integration notes: None. Conflicting records: None.\"\\n}\\n```\\n\\nNote: The top 5 cheapest flights are returned. The flight with departure time \\'None\\' is included in the results.', role='assistant', annotations=None, executed_tools=None, function_call=None, reasoning=None, tool_calls=None))], created=1763292801, model='llama-3.1-8b-instant', object='chat.completion', system_fingerprint='fp_1151d4f23c', usage=CompletionUsage(completion_tokens=417, prompt_tokens=491, total_tokens=908, completion_time=0.406324574, prompt_time=0.02996262, queue_time=0.05196163, total_time=0.436287194), usage_breakdown=None, x_groq={'id': 'req_01ka671stresqtx52n3c310zrp'}, service_tier='on_demand')"
+}

@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-federator.py — returns:
- - separate results: dwh_results, indigo_results, mongo_results
- - integrated_results: merged and de-duplicated
- - decomposition: parsed, dwh_sql, indigo_sql, mongo_filter
- - rewritten_prompt (what was sent to LLM)
- - llm_summary (live LLM output or deterministic fallback)
- - llm_raw (raw LLM response or error info)
+federator.py — enhanced but backward-compatible federator.
 
-Drop this file into backend/Query_engine/ replacing the previous federator.py.
+- Normalizes prices (float), extracts departure_time where present.
+- If parsed["airline"] is present, filters each source result to that airline before integration.
+- Attempts to parse LLM JSON into 'llm_parsed' for easier consumption.
+- Keeps previous outputs and printing behavior.
 """
+
 import os
 import json
 import argparse
@@ -20,18 +18,15 @@ from psycopg2.extras import RealDictCursor
 from pymongo import MongoClient
 from rapidfuzz import process, fuzz
 import certifi
-import ssl
 import sys
 
 import analyzer
 from llm_rewriter import rewrite_summary_prompt
-
-# new LLM client wrapper (create backend/Query_engine/llm_client.py as instructed)
 from llm_client import make_prompt, safe_call_llm
 
 load_dotenv()
 
-# envs (single PG_* fallback)
+# env variables (fallbacks)
 PG_HOST = os.getenv("PG_HOST")
 PG_PORT = int(os.getenv("PG_PORT", "5432"))
 PG_DB = os.getenv("PG_DB")
@@ -53,9 +48,6 @@ INDIGO_PG_PASSWORD = os.getenv("INDIGO_PG_PASSWORD") or PG_PASS
 MONGO_URI = os.getenv("MONGO_URI", None)
 MONGO_ALLOW_INVALID_CERTS = os.getenv("MONGO_ALLOW_INVALID_CERTS", "false").lower() in ("1", "true", "yes")
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", None)
-
-# canonicalization
 CANONICAL_CITIES = ["Delhi","Chennai","Mumbai","Bangalore","Kolkata","Hyderabad","Pune","Ahmedabad"]
 ALIAS_MAP = {"delgi":"Delhi","delh":"Delhi","chenai":"Chennai","banglore":"Bangalore","bengaluru":"Bangalore"}
 FUZZY_THRESHOLD = int(os.getenv("FUZZY_MATCH_THRESHOLD","70"))
@@ -91,7 +83,7 @@ def execute_pg(host, port, dbname, user, password, sql_tpl, params):
     finally:
         conn.close()
 
-# SQL builders
+# SQL builders (same as analyzer's)
 def build_param_sql_dwh(parsed):
     intent = str(parsed.get("intent","LIST")).upper()
     if intent == "AVG":
@@ -112,7 +104,7 @@ def build_param_sql_indigo(parsed):
     if intent == "AVG":
         return ("SELECT AVG(fare) AS avg_price FROM indigo_src WHERE from_city = %s AND to_city = %s;", [parsed.get("origin"), parsed.get("destination")])
     base = ("SELECT flight_no, airline, from_city AS origin, to_city AS destination, journey_date AS date, "
-            "fare as price, NULL as seat_count, 'IndiGo' as source FROM indigo_src WHERE 1=1")
+            "departure_time, fare as price, NULL as seat_count, 'IndiGo' as source FROM indigo_src WHERE 1=1")
     params=[]
     if parsed.get("origin"): base += " AND from_city = %s"; params.append(parsed["origin"])
     if parsed.get("destination"): base += " AND to_city = %s"; params.append(parsed["destination"])
@@ -132,7 +124,7 @@ def build_mongo_filter(parsed):
     if parsed.get("airline"): filt["airline_name"]=parsed["airline"]
     return filt
 
-# Mongo helper (secure then optional insecure)
+# Mongo helper
 def execute_mongo(filter_dict, limit=100):
     if not MONGO_URI:
         print("MONGO_URI not set; skipping Mongo.")
@@ -155,7 +147,6 @@ def execute_mongo(filter_dict, limit=100):
         else:
             print("Set MONGO_ALLOW_INVALID_CERTS=true in .env if you want to retry insecurely (debug only).")
             return []
-    # read collection
     try:
         db = client.get_default_database()
         coll = db.get_collection("airindia_flights")
@@ -165,7 +156,6 @@ def execute_mongo(filter_dict, limit=100):
         client.close()
         return []
     client.close()
-    # normalize docs shape
     out=[]
     for d in docs:
         out.append({
@@ -176,13 +166,13 @@ def execute_mongo(filter_dict, limit=100):
             "date": d.get("schedule",{}).get("date"),
             "price": compute_effective_price_from_mongo(d),
             "seat_count": d.get("availability",{}).get("seats_count"),
+            "departure_time": extract_departure_from_mongo(d),
             "source": "AirIndia"
         })
     return out
 
 def compute_effective_price_from_mongo(doc):
     base = doc.get("pricing",{}).get("base_price")
-    # support both pricing.offer.discount and pricing.discount_percent
     disc = None
     if isinstance(doc.get("pricing",{}).get("offer"), dict):
         disc = doc.get("pricing",{}).get("offer",{}).get("discount")
@@ -197,30 +187,110 @@ def compute_effective_price_from_mongo(doc):
         try: return float(base)
         except Exception: return None
 
-# integration: also keep separate source lists
+def extract_departure_from_mongo(d):
+    sched = d.get("schedule",{})
+    if sched.get("departure"):
+        return sched.get("departure")
+    if sched.get("departure_time"):
+        return sched.get("departure_time")
+    return None
+
+# normalize a single row from any source
+def normalize_row(r: dict) -> dict:
+    out = dict(r)
+    price = out.get("price")
+    if price is not None:
+        try:
+            out["price"] = float(price)
+        except Exception:
+            try:
+                out["price"] = float(str(price).replace(",",""))
+            except Exception:
+                out["price"] = None
+    else:
+        out["price"] = None
+
+    dt = out.get("departure_time") or out.get("departure") or out.get("dep_time") or out.get("departureTime")
+    if not dt and isinstance(out.get("schedule"), dict):
+        dt = out["schedule"].get("departure") or out["schedule"].get("departure_time")
+    out["departure_time"] = dt if dt is not None else None
+
+    if out.get("origin"):
+        out["origin"] = str(out["origin"]).title()
+    if out.get("destination"):
+        out["destination"] = str(out["destination"]).title()
+
+    if not out.get("flight_no"):
+        out["flight_no"] = f"{out.get('source','UNKNOWN')}_{out.get('origin')}_{out.get('destination')}_{out.get('date')}"
+    return out
+
+# airline normalization for filtering
+AIRLINE_ALIASES = {
+    "airindia": "Air India",
+    "air india": "Air India",
+    "indigo": "IndiGo",
+    "spicejet": "SpiceJet",
+    "spice jet": "SpiceJet",
+    "vistara": "Vistara",
+    "jet airways": "Jet Airways",
+    "jet": "Jet Airways",
+    "gofirst": "GoFirst",
+    "airasia": "AirAsia"
+}
+
+def normalize_airline_token(tok: str):
+    if not tok:
+        return None
+    t = tok.strip().lower()
+    if t in AIRLINE_ALIASES:
+        return AIRLINE_ALIASES[t]
+    for k,v in AIRLINE_ALIASES.items():
+        if k in t:
+            return v
+    return tok.strip().title()
+
+def filter_rows_by_airline(rows, airline_token):
+    if not airline_token:
+        return rows
+    norm = normalize_airline_token(airline_token)
+    if not norm:
+        return rows
+    def match(r):
+        a = (r.get("airline") or "")
+        s = (r.get("source") or "")
+        if a and norm.lower() in str(a).lower():
+            return True
+        if s and norm.lower() in str(s).lower():
+            return True
+        return False
+    return [r for r in (rows or []) if match(r)]
+
 def integrate_results(dwh_rows, indigo_rows, mongo_rows):
-    # create merged map keyed by flight_no or origin-dest-date
+    dwh_n = [normalize_row(r) for r in (dwh_rows or [])]
+    indigo_n = [normalize_row(r) for r in (indigo_rows or [])]
+    mongo_n = [normalize_row(r) for r in (mongo_rows or [])]
+
     merged={}
-    for r in (dwh_rows or []):
+    for r in dwh_n:
         key = r.get("flight_no") or f"{r.get('origin')}-{r.get('destination')}-{r.get('date')}"
         merged.setdefault(key, {}).update(r)
-    for r in (indigo_rows or []):
-        key = r.get("flight_no") or f"{r.get('origin')}-{r.get('destination')}-{r.get('date')}"
-        if key in merged:
-            # fill missing fields
-            for k,v in r.items():
-                if (merged[key].get(k) is None or merged[key].get(k)=="") and v:
-                    merged[key][k]=v
-        else:
-            merged.setdefault(key, {}).update(r)
-    for r in (mongo_rows or []):
+    for r in indigo_n:
         key = r.get("flight_no") or f"{r.get('origin')}-{r.get('destination')}-{r.get('date')}"
         if key in merged:
             for k,v in r.items():
-                if (merged[key].get(k) is None or merged[key].get(k)=="") and v:
+                if (merged[key].get(k) is None or merged[key].get(k)=="") and v is not None:
                     merged[key][k]=v
         else:
             merged.setdefault(key, {}).update(r)
+    for r in mongo_n:
+        key = r.get("flight_no") or f"{r.get('origin')}-{r.get('destination')}-{r.get('date')}"
+        if key in merged:
+            for k,v in r.items():
+                if (merged[key].get(k) is None or merged[key].get(k)=="") and v is not None:
+                    merged[key][k]=v
+        else:
+            merged.setdefault(key, {}).update(r)
+
     integrated = list(merged.values())
     try:
         integrated.sort(key=lambda x: (x.get("price") is None, x.get("price") or 0))
@@ -230,7 +300,6 @@ def integrate_results(dwh_rows, indigo_rows, mongo_rows):
 
 # main flow
 def run_query_interactive(query_text):
-    # parse using analyzer (LLM or regex)
     try:
         if getattr(analyzer,"USE_LLM",False):
             parsed = analyzer.llm_parse(query_text)
@@ -240,19 +309,14 @@ def run_query_interactive(query_text):
         print("Analyzer LLM parse failed or missing; fallback to regex. Error:", e)
         parsed = analyzer.regex_parse(query_text)
 
-    # canonicalize
     parsed["origin"] = fuzzy_city_normalize(parsed.get("origin"))
     parsed["destination"] = fuzzy_city_normalize(parsed.get("destination"))
 
-    # build parameterized SQL and mongo filter
     dwh_sql, dwh_params = build_param_sql_dwh(parsed)
     indigo_sql, indigo_params = build_param_sql_indigo(parsed)
     mongo_filter = build_mongo_filter(parsed)
 
-    # run queries
-    dwh_rows=[]
-    indigo_rows=[]
-    mongo_rows=[]
+    dwh_rows=[]; indigo_rows=[]; mongo_rows=[]
     if dwh_sql:
         try:
             print("Executing DWH on host:", DWH_PG_HOST, "params:", dwh_params)
@@ -269,13 +333,16 @@ def run_query_interactive(query_text):
         print("Executing Mongo filter:", mongo_filter)
         mongo_rows = execute_mongo(mongo_filter)
 
-    # integrate
+    # If user explicitly requested an airline, filter each source result set
+    requested_airline = parsed.get("airline")
+    if requested_airline:
+        dwh_rows = filter_rows_by_airline(dwh_rows, requested_airline)
+        indigo_rows = filter_rows_by_airline(indigo_rows, requested_airline)
+        mongo_rows = filter_rows_by_airline(mongo_rows, requested_airline)
+
     integrated = integrate_results(dwh_rows, indigo_rows, mongo_rows)
 
-    # rewrite prompt (explicit) and call LLM via llm_client with fallback
-    # build a human-readable rewritten prompt for inspection / TA
     rewritten_prompt = make_prompt(parsed, integrated)
-    # also keep the old rewriter output (if you want to compare)
     try:
         legacy_rewrite = rewrite_summary_prompt(parsed, integrated)
     except Exception:
@@ -283,45 +350,62 @@ def run_query_interactive(query_text):
 
     llm_summary = None
     llm_raw = None
-    # use analyzer.USE_LLM & OPENAI_API_KEY to decide whether to call remote LLM
     try:
-        if getattr(analyzer,"USE_LLM",False) and OPENAI_API_KEY:
-            # call llm safely via wrapper (handles retries)
+        if getattr(analyzer,"USE_LLM",False) and safe_call_llm is not None:
             resp = safe_call_llm(rewritten_prompt)
             if isinstance(resp, dict) and resp.get("text"):
-                llm_summary = resp["text"]
+                text = resp["text"].strip()
+                # try to extract json if wrapped in fences
+                if text.startswith("```") and text.endswith("```"):
+                    s = text.find("{")
+                    e = text.rfind("}")
+                    if s != -1 and e != -1 and e > s:
+                        text = text[s:e+1]
+                llm_summary = text
                 llm_raw = resp.get("raw", None)
             else:
-                # resp is an error structure from safe_call_llm
                 llm_raw = resp
-                # deterministic fallback
                 try:
-                    sorted_rows = sorted([r for r in integrated if r.get("price") is not None], key=lambda x: x.get("price"))
+                    sorted_rows = [r for r in integrated if r.get("price") is not None]
+                    sorted_rows.sort(key=lambda x: x.get("price"))
                     top3 = sorted_rows[:3]
                     llm_summary = "DETERMINISTIC FALLBACK (LLM call failed): " + ", ".join([f"{r.get('flight_no')}({r.get('price')})" for r in top3])
                 except Exception:
                     llm_summary = "DETERMINISTIC FALLBACK (LLM call failed): no price info"
         else:
-            # deterministic fallback (no API key or USE_LLM is false)
             try:
-                sorted_rows = sorted([r for r in integrated if r.get("price") is not None], key=lambda x: x.get("price"))
+                sorted_rows = [r for r in integrated if r.get("price") is not None]
+                sorted_rows.sort(key=lambda x: x.get("price"))
                 top3 = sorted_rows[:3]
                 llm_summary = "DETERMINISTIC FALLBACK (no LLM): " + ", ".join([f"{r.get('flight_no')}({r.get('price')})" for r in top3])
             except Exception:
                 llm_summary = "DETERMINISTIC FALLBACK (no LLM): no price info"
-            llm_raw = {"note": "LLM not called; USE_LLM or OPENAI_API_KEY not configured."}
+            llm_raw = {"note": "LLM not called; analyzer.USE_LLM is False or llm_client.safe_call_llm not available."}
     except Exception as e:
         print("LLM summarization error:", e)
-        # final fallback
         try:
-            sorted_rows = sorted([r for r in integrated if r.get("price") is not None], key=lambda x: x.get("price"))
+            sorted_rows = [r for r in integrated if r.get("price") is not None]
+            sorted_rows.sort(key=lambda x: x.get("price"))
             top3 = sorted_rows[:3]
             llm_summary = "DETERMINISTIC FALLBACK (exception): " + ", ".join([f"{r.get('flight_no')}({r.get('price')})" for r in top3])
         except Exception:
             llm_summary = "DETERMINISTIC FALLBACK (exception): no price info"
         llm_raw = {"error": str(e)}
 
-    # output structure with separate + integrated results
+    # parse llm summary JSON
+    llm_parsed = None
+    if llm_summary:
+        try:
+            llm_parsed = json.loads(llm_summary)
+        except Exception:
+            try:
+                s = llm_summary.find("{")
+                e = llm_summary.rfind("}")
+                if s != -1 and e != -1 and e > s:
+                    llm_parsed = json.loads(llm_summary[s:e+1])
+            except Exception:
+                llm_parsed = None
+
     out = {
         "query": query_text,
         "parsed": parsed,
@@ -335,6 +419,7 @@ def run_query_interactive(query_text):
         "rewritten_prompt": rewritten_prompt,
         "legacy_rewrite": legacy_rewrite,
         "llm_summary": llm_summary,
+        "llm_parsed": llm_parsed,
         "llm_raw": llm_raw
     }
 
@@ -342,7 +427,6 @@ def run_query_interactive(query_text):
     with open(fname,"w",encoding="utf-8") as f:
         json.dump(out,f,indent=2,default=str)
     print(f"Written output to {fname}")
-    # print short console summary for TA
     print("=== Summary ===")
     print("Parsed:", json.dumps(parsed))
     print("DWH rows:", len(dwh_rows), "IndiGo rows:", len(indigo_rows), "Mongo rows:", len(mongo_rows))
