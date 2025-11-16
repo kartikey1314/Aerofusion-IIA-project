@@ -1,0 +1,392 @@
+{
+  "query": "provide me flights from delhi to Kolkata tomorrow",
+  "parsed": {
+    "airline": null,
+    "origin": "Delhi",
+    "destination": "Kolkata",
+    "date": "2025-11-17",
+    "price_limit": null,
+    "seat_count": null,
+    "intent": "LIST"
+  },
+  "dwh_sql": {
+    "sql": "SELECT flight_no, airline, origin, destination, flight_date AS date, price, array_length(seats,1) AS seat_count, 'DWH' as source FROM flights_dwh WHERE 1=1 AND origin = %s AND destination = %s AND flight_date = %s;",
+    "params": [
+      "Delhi",
+      "Kolkata",
+      "2025-11-17"
+    ]
+  },
+  "indigo_sql": {
+    "sql": "SELECT flight_no, airline, from_city AS origin, to_city AS destination, journey_date AS date, fare as price, NULL as seat_count, 'IndiGo' as source FROM indigo_src WHERE 1=1 AND from_city = %s AND to_city = %s AND journey_date = %s;",
+    "params": [
+      "Delhi",
+      "Kolkata",
+      "2025-11-17"
+    ]
+  },
+  "mongo_filter": {
+    "route.origin": "Delhi",
+    "route.destination": "Kolkata",
+    "schedule.date": "2025-11-17"
+  },
+  "dwh_results": [
+    {
+      "flight_no": "IGKOL20251117001",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "4917.60",
+      "seat_count": 50,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "IGKOL20251117002",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6581.00",
+      "seat_count": 146,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "IGKOL20251117003",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6993.00",
+      "seat_count": 162,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "IGKOL20251117004",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6814.35",
+      "seat_count": 136,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "IGKOL20251117005",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "5224.00",
+      "seat_count": 72,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162247",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6386.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162248",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "5435.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162249",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "5450.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162250",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "5680.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162251",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6112.00",
+      "seat_count": null,
+      "source": "DWH"
+    }
+  ],
+  "indigo_results": [
+    {
+      "flight_no": "IGKOL20251117001",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "5464.00",
+      "seat_count": null,
+      "source": "IndiGo"
+    },
+    {
+      "flight_no": "IGKOL20251117002",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6581.00",
+      "seat_count": null,
+      "source": "IndiGo"
+    },
+    {
+      "flight_no": "IGKOL20251117003",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "7770.00",
+      "seat_count": null,
+      "source": "IndiGo"
+    },
+    {
+      "flight_no": "IGKOL20251117004",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "7173.00",
+      "seat_count": null,
+      "source": "IndiGo"
+    },
+    {
+      "flight_no": "IGKOL20251117005",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "5224.00",
+      "seat_count": null,
+      "source": "IndiGo"
+    }
+  ],
+  "mongo_results": [
+    {
+      "flight_no": "AI20251117794",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": 6386.0,
+      "seat_count": 103,
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI20251117795",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": 5435.0,
+      "seat_count": 104,
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI20251117796",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": 5450.0,
+      "seat_count": 77,
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI20251117797",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": 5112.0,
+      "seat_count": 126,
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI20251117798",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": 6112.0,
+      "seat_count": 152,
+      "source": "AirIndia"
+    }
+  ],
+  "integrated_results": [
+    {
+      "flight_no": "IGKOL20251117001",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "4917.60",
+      "seat_count": 50,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI20251117797",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": 5112.0,
+      "seat_count": 126,
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "IGKOL20251117005",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "5224.00",
+      "seat_count": 72,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162248",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "5435.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI20251117795",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": 5435.0,
+      "seat_count": 104,
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI202511162249",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "5450.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI20251117796",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": 5450.0,
+      "seat_count": 77,
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI202511162250",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "5680.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI202511162251",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6112.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI20251117798",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": 6112.0,
+      "seat_count": 152,
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "AI202511162247",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6386.00",
+      "seat_count": null,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "AI20251117794",
+      "airline": "Air India",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": 6386.0,
+      "seat_count": 103,
+      "source": "AirIndia"
+    },
+    {
+      "flight_no": "IGKOL20251117002",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6581.00",
+      "seat_count": 146,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "IGKOL20251117004",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6814.35",
+      "seat_count": 136,
+      "source": "DWH"
+    },
+    {
+      "flight_no": "IGKOL20251117003",
+      "airline": "IndiGo",
+      "origin": "Delhi",
+      "destination": "Kolkata",
+      "date": "2025-11-17",
+      "price": "6993.00",
+      "seat_count": 162,
+      "source": "DWH"
+    }
+  ],
+  "llm_summary": "LLM helper missing; skipping actual LLM call."
+}

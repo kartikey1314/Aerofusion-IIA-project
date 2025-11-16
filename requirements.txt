@@ -1,0 +1,5 @@
+psycopg2-binary
+pymongo
+python-dotenv
+rapidfuzz
+openai   # optional, if you actually call the LLM

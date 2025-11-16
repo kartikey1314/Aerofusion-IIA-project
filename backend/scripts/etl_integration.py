@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import execute_values
 from pymongo import MongoClient
+import random
+from collections import defaultdict
+
 
 
 load_dotenv()
@@ -153,6 +156,64 @@ def extract_airindia(mdb) -> List[Dict[str, Any]]:
         })
     return out
 
+def ensure_flight_no(records):
+    """
+    Fill missing flight_no in list of record dicts.
+    Expects each record to have at least: 'airline' and 'flight_date' (date or ISO str).
+    Modifies records in-place and returns them.
+    """
+    # collect existing flight_nos
+    existing = set()
+    for r in records:
+        fn = r.get("flight_no")
+        if fn:
+            existing.add(str(fn))
+
+    # counters per (prefix, date)
+    counters = defaultdict(lambda: 1000 + random.randint(0, 500))
+
+    def date_key(dt):
+        if dt is None:
+            return datetime.utcnow().date().isoformat()
+        if isinstance(dt, str):
+            try:
+                return datetime.fromisoformat(dt).date().isoformat()
+            except Exception:
+                return dt.split("T")[0] if "T" in dt else dt
+        if isinstance(dt, datetime):
+            return dt.date().isoformat()
+        # assume date object
+        try:
+            return dt.isoformat()
+        except Exception:
+            return datetime.utcnow().date().isoformat()
+
+    created = 0
+    for r in records:
+        if r.get("flight_no"):
+            continue
+        airline = (r.get("airline") or "").lower()
+        prefix = "AI" if "air india" in airline else "IG"
+        # choose date part from flight_date or journey_date or schedule
+        dt = r.get("flight_date") or r.get("journey_date") or r.get("date") or r.get("schedule", {}).get("date") if isinstance(r.get("schedule"), dict) else None
+        dk = date_key(dt)
+        key = (prefix, dk)
+        # generate candidate until unique
+        attempt = 0
+        while True:
+            candidate = f"{prefix}{dk.replace('-','')}{counters[key]:04d}"
+            counters[key] += 1
+            attempt += 1
+            if candidate not in existing:
+                break
+            if attempt > 10000:
+                raise RuntimeError("Too many collisions generating flight_no for " + str(key))
+        r["flight_no"] = candidate
+        existing.add(candidate)
+        created += 1
+    if created:
+        print(f"[ETL] Generated {created} flight_no values for records missing them.")
+    return records
 
 
 def load_snapshot(pg, records: List[Dict[str, Any]]) -> int:
@@ -207,6 +268,7 @@ def load_snapshot(pg, records: List[Dict[str, Any]]) -> int:
 
 
 
+
 def main():
     started = datetime.now()
     rows_ai = rows_ig = rows_loaded = 0
@@ -230,6 +292,8 @@ def main():
 
         all_records = indigo + airindia
         print(f"Total unified records: {len(all_records)}")
+        # ensure every record has flight_no before loading
+        all_records = ensure_flight_no(all_records)
 
         rows_loaded = load_snapshot(pg, all_records)
         print("Loaded {rows_loaded} records into DWH successfully.")
